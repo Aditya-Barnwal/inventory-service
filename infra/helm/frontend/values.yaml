@@ -19,3 +19,7 @@ podAnnotations: {}
 
 # optional extra envs for nginx container (usually none for static site)
 env: []
+
+ingress:
+  enabled: true
+  host: inventory.local
