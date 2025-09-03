@@ -1,0 +1,85 @@
+replicaCount: 1
+
+image:
+  repository: localhost:5500/inventory-service
+  tag: "dev"
+  pullPolicy: IfNotPresent
+
+# Add if you ever need a private registry secret
+imagePullSecrets: [] # e.g., - name: regcred
+
+service:
+  type: ClusterIP
+  port: 8080
+
+# ----- Application environment -----
+env:
+  # Spring datasource (points to the MySQL StatefulSet service)
+  - name: SPRING_DATASOURCE_URL
+    value: jdbc:mysql://inventory-mysql:3306/inventorydb
+  - name: SPRING_DATASOURCE_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: inventory-db-secret
+        key: username
+  - name: SPRING_DATASOURCE_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: inventory-db-secret
+        key: password
+
+  # Optional: expose actuator health and enable probe endpoints if you switch to /liveness,/readiness
+  # - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+  #   value: "health,info"
+  # - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+  #   value: "true"
+
+# ----- Probes -----
+# Using plain /actuator/health to avoid needing extra Spring config.
+livenessProbe:
+  tcpSocket:
+    port: 8080
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 6
+
+readinessProbe:
+  tcpSocket:
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 6
+
+startupProbe:
+  tcpSocket:
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  failureThreshold: 24
+
+# ----- Resources (uncomment and tune if you want) -----
+resources: {}
+# resources:
+#   requests:
+#     cpu: 100m
+#     memory: 256Mi
+#   limits:
+#     cpu: 500m
+#     memory: 512Mi
+
+# ----- MySQL (StatefulSet used by the chart) -----
+mysql:
+  rootPassword: root
+  username: inventory
+  password: inventorypass
+  database: inventorydb
+
+ingress:
+  enabled: false
+
+# Optional scheduling knobs (kept empty by default)
+nodeSelector: {}
+tolerations: []
+affinity: {}

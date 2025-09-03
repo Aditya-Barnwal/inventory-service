@@ -1,0 +1,21 @@
+replicaCount: 1
+
+image:
+  repository: localhost:5500/inventory-frontend
+  tag: "dev"            # you push to :dev in your flow
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+podLabels: {}
+podAnnotations: {}
+
+# optional extra envs for nginx container (usually none for static site)
+env: []
