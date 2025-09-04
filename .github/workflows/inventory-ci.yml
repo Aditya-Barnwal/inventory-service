@@ -1,0 +1,52 @@
+name: CI - Build & Deploy to Kind
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-deploy:
+    runs-on: [ self-hosted, kind-runner ]
+    env:
+      NS: inventory
+      BACKEND_IMG: localhost:5500/inventory-service
+      FRONTEND_IMG: localhost:5500/inventory-frontend
+      TAG: dev-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build backend jar
+        working-directory: backend
+        run: mvn -B -DskipTests clean package
+
+      - name: Build images
+        run: |
+          docker build -t $BACKEND_IMG:$TAG ./backend
+          # ensure frontend/.env targets http://inventory.local/api/v1
+          docker build -t $FRONTEND_IMG:dev ./frontend
+
+      - name: Push images
+        run: |
+          docker push $BACKEND_IMG:$TAG
+          docker push $FRONTEND_IMG:dev
+
+      - name: Helm deploy backend
+        run: |
+          helm upgrade --install inventory ./infra/helm/inventory-service \
+            -n $NS --create-namespace \
+            --set image.repository=$BACKEND_IMG \
+            --set image.tag=$TAG
+
+      - name: Helm deploy frontend
+        run: |
+          helm upgrade --install inventory-ui ./infra/helm/frontend -n $NS
+
+      - name: Wait for rollouts
+        run: |
+          kubectl -n $NS rollout status deploy/inventory-inventory-service --timeout=180s
+          kubectl -n $NS rollout status deploy/inventory-ui-inventory-frontend --timeout=180s
