@@ -1,0 +1,38 @@
+services:
+  medallion-db:
+    image: mysql:8
+    container_name: medallion-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bronze   # created first; we also create silver/gold via DDL
+    ports:
+      - "3306:3306"
+    volumes:
+      - medallion-data:/var/lib/mysql
+      - ./init_medallion.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+
+  spark-etl:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spark-etl
+    depends_on:
+      medallion-db:
+        condition: service_started
+    environment:
+      MYSQL_HOST: medallion-db
+      MYSQL_PORT: "3306"
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      OLTP_JDBC_URL: "jdbc:mysql://medallion-db:3306/inventory_service"
+      OLTP_USER: root
+      OLTP_PASSWORD: root
+      CLICKSTREAM_PATH: "/opt/etl/data/clickstream/*.jsonl"
+      PYSPARK_PYTHON: python
+    ports:
+      - "8888:8888"   # Jupyter
+    volumes:
+      - ./:/opt/etl
+
+volumes:
+  medallion-data: {}

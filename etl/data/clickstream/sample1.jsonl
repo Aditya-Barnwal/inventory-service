@@ -1,0 +1,3 @@
+{"event_id":"e1","user_id":101,"session_id":"s-1","event_type":"page_view","page":"/","route":"/","element":null,"ts":"2025-09-04T09:30:00Z","metadata":{"device":"desktop","search_term":""}}
+{"event_id":"e2","user_id":101,"session_id":"s-1","event_type":"click","page":"/products","route":"/products","element":"#buy-now","ts":"2025-09-04T09:31:12Z","metadata":{"device":"desktop","search_term":""}}
+{"event_id":"e3","user_id":102,"session_id":"s-2","event_type":"search","page":"/search","route":"/search?q=mouse","element":"input[name=q]","ts":"2025-09-04T09:35:45Z","metadata":{"device":"mobile","search_term":"mouse"}}
